@@ -20,6 +20,11 @@
 #define PIN_KEY_MINUS 21
 #define PIN_KEY_MODE 14
 
+#define PIN_SD_CS 10
+#define PIN_SD_MOSI 11
+#define PIN_SD_MISO 13
+#define PIN_SD_SCK 12
+
 using namespace std;
 
 #define FONT16 &fonts::efontCN_16

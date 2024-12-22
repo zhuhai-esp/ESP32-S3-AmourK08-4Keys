@@ -16,7 +16,7 @@ def copy_merge_bins(source, target, env):
     if (f_flash == '80000000L'):
         flash_freq = '80m'
     mcu = board.get("build.mcu", "esp32")
-    firmware_dst = "{}DailyMusic-{}_{}_{}_0x0.bin".format(OUTPUT_DIR, mcu, name, flash_size)
+    firmware_dst = "{}CardMusic-{}_{}_{}_0x0.bin".format(OUTPUT_DIR, mcu, name, flash_size)
     if os.path.isfile(firmware_dst):
         os.remove(firmware_dst)
     cmd = " ".join(

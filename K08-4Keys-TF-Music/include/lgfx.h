@@ -18,7 +18,7 @@ public:
       auto cfg = _bus_instance.config();
 
       // SPI bus settings
-      cfg.spi_host = SPI2_HOST; // Select the SPI to use ESP32-S2,C3 : SPI2_HOST
+      cfg.spi_host = SPI3_HOST; // Select the SPI to use ESP32-S2,C3 : SPI2_HOST
                                 // or SPI3_HOST / ESP32 : VSPI_HOST or HSPI_HOST
       // * With the ESP-IDF version upgrade, VSPI_HOST and HSPI_HOST
       // descriptions are deprecated, so if an error occurs, use SPI2_HOST and
