@@ -1,4 +1,5 @@
 #include "lgfx.h"
+#include <Adafruit_AHTX0.h>
 #include <Adafruit_NeoPixel.h>
 #include <ArduinoOTA.h>
 #include <Audio.h>
@@ -23,6 +24,9 @@
 #define PIN_SD_MISO 13
 #define PIN_SD_SCK 12
 
+#define PIN_I2C_SDA 1
+#define PIN_I2C_SCL 2
+
 using namespace std;
 
 #define FONT16 &fonts::efontCN_16
@@ -34,16 +38,18 @@ typedef struct {
 
 static const char *WEEK_DAYS[] = {"日", "一", "二", "三", "四", "五", "六"};
 Adafruit_NeoPixel pixels(4, PIN_LED, NEO_GRB + NEO_KHZ800);
+Adafruit_AHTX0 aht;
 LGFX tft;
 LGFX_Sprite sp(&tft);
-long check1s = 0, check10ms = 0, check300ms = 0;
-long checkSaveMode = 0;
+long check1s = 0, check10ms = 0, check300ms = 0, check5s = 0;
 char buf[128] = {0};
 Audio audio;
 int curIndex = 0;
-int curVolume = 6;
+int curVolume = 8;
 vector<SongItem *> songs;
 std::map<u32_t, OneButton *> buttons;
+String sliders[3];
+uint8_t sildeIdx = 0;
 
 void inline initTFTDevice() {
   tft.init();
@@ -82,6 +88,8 @@ void playNext(int offset) {
     } else if (curIndex < 0) {
       curIndex += total;
     }
+    sprintf(buf, "正在播放: %d/%d", curIndex + 1, total);
+    sliders[2] = buf;
     auto *song = songs[curIndex];
     auto *name = song->name.c_str();
     sprintf(buf, "%d.%s", curIndex + 1, name);
@@ -212,7 +220,6 @@ inline void showClientIP() {
 }
 
 void onButtonClick(void *p) {
-  checkSaveMode = 0;
   u32_t pin = (u32_t)p;
   switch (pin) {
   case PIN_KEY_MODE:
@@ -253,6 +260,14 @@ void inline setupButtons() {
   }
 }
 
+void inline showSlider() {
+  sp.createSprite(240, 16);
+  String txt = sliders[sildeIdx];
+  sp.drawCentreString(txt, 110, 0);
+  sp.pushSprite(0, 100);
+  sp.deleteSprite();
+}
+
 void inline initSDCard() {
   pinMode(PIN_SD_CS, OUTPUT);
   digitalWrite(PIN_SD_CS, HIGH);
@@ -260,28 +275,52 @@ void inline initSDCard() {
   SD.begin(PIN_SD_CS);
 }
 
+void scanMp3InDir(fs::FS &fs, const char *dirname, uint8_t levels) {
+  File root = fs.open(dirname);
+  if (!root) {
+    return;
+  }
+  if (!root.isDirectory()) {
+    return;
+  }
+  File mp3 = root.openNextFile();
+  while (mp3) {
+    String path = mp3.path();
+    if (mp3.isDirectory()) {
+      if (levels) {
+        scanMp3InDir(fs, mp3.path(), levels - 1);
+      }
+    } else if (path.endsWith(".mp3")) {
+      SongItem *song = new SongItem();
+      song->name = mp3.name();
+      song->path = path;
+      songs.push_back(song);
+    }
+    mp3 = root.openNextFile();
+  }
+}
+
 void inline scanAllMusic() {
+  scanMp3InDir(SD, "/", 3);
   auto allMb = SD.totalBytes() / (1024 * 1024);
   auto usedMb = SD.usedBytes() / (1024 * 1024);
   sprintf(buf, "TF卡已使用: %lluMB/%lluMB", usedMb, allMb);
-  sp.createSprite(240, 16);
-  sp.drawCentreString(buf, 110, 0);
-  sp.pushSprite(0, 100);
-  sp.deleteSprite();
-  File root = SD.open("/", 0);
-  if (root) {
-    File mp3 = root.openNextFile();
-    while (mp3) {
-      String path = mp3.path();
-      if (path.endsWith(".mp3")) {
-        SongItem *song = new SongItem();
-        song->name = mp3.name();
-        song->path = path;
-        songs.push_back(song);
-      }
-      mp3 = root.openNextFile();
-    }
+  sliders[0] = buf;
+}
+
+void inline initAHT20Wire() {
+  Wire.setPins(PIN_I2C_SDA, PIN_I2C_SCL);
+  if (!aht.begin()) {
+    Serial.println("Could not find AHT20?");
   }
+}
+
+void inline updateAHT20Data() {
+  sensors_event_t humidity, temp;
+  aht.getEvent(&humidity, &temp);
+  sprintf(buf, "气温: %.2f℃ 湿度: %.2f%%\n", temp.temperature,
+          humidity.relative_humidity);
+  sliders[1] = buf;
 }
 
 void setup() {
@@ -292,11 +331,13 @@ void setup() {
   initPixels();
   initSDCard();
   initAudioDevice();
+  initAHT20Wire();
   autoConfigWifi();
   startConfigTime();
   setupOTAConfig();
   showClientIP();
   scanAllMusic();
+  updateAHT20Data();
   nextVolume(0);
   playNext(0);
 }
@@ -304,6 +345,12 @@ void setup() {
 void loop() {
   audio.loop();
   auto ms = millis();
+  if (ms - check5s > 5000) {
+    check5s = ms;
+    updateAHT20Data();
+    showSlider();
+    sildeIdx = (sildeIdx + 1) % (sizeof(sliders) / sizeof(sliders[0]));
+  }
   if (ms - check1s > 1000) {
     check1s = ms;
     ArduinoOTA.handle();
@@ -325,6 +372,4 @@ void loop() {
   }
 }
 
-void audio_info(const char *info) { Serial.println(info); }
-
-void audio_eof_stream(const char *info) { playNext(1); }
+void audio_eof_mp3(const char *info) { playNext(1); }
