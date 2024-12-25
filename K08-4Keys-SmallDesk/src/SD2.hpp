@@ -10,14 +10,27 @@
 #include <Adafruit_AHTX0.h>
 #include <Adafruit_NeoPixel.h>
 #include <ArduinoJson.h>
+#include <Audio.h>
 #include <HTTPClient.h>
+#include <OneButton.h>
 #include <TFT_eSPI.h>
 #include <TJpg_Decoder.h>
 #include <WiFiManager.h>
+#include <map>
 
 #define PIN_WS2812 48
 #define PIN_I2C_SDA 1
 #define PIN_I2C_SCL 2
+#define PIN_RED_LED 47
+
+#define PIN_I2S_SD 4
+#define PIN_I2S_DOUT 5
+#define PIN_I2S_BCLK 6
+#define PIN_I2S_LRC 7
+
+#define PIN_KEY_ADD 9
+#define PIN_KEY_MINUS 21
+#define PIN_KEY_MODE 14
 
 #define NUM_LEDS 4
 
@@ -25,6 +38,10 @@
   "Mozilla/5.0 (iPhone; CPU iPhone OS 11_0 like Mac OS X) "                    \
   "AppleWebKit/604.1.38 (KHTML, like Gecko) Version/11.0 Mobile/15A372 "       \
   "Safari/604.1"
+
+#define TTS_LINK                                                               \
+  "https://dds.dui.ai/runtime/v1/"                                             \
+  "synthesize?text=%s&voiceId=%s&speed=1&volume=80&audioType=mp3"
 
 #define FONT_COLOR_HOUR 0x6D9D
 #define FONT_COLOR_MIN 0x7FC0
@@ -38,7 +55,7 @@ TFT_eSprite clk = TFT_eSprite(&tft);
 uint16_t brightness = 8;
 uint8_t rotation = 3;
 WiFiManager wm;
-char buf[256];
+char buf[512];
 WiFiClient wificlient;
 uint16_t bgColor = 0x0000;
 int tempnum = 0;      // 温度百分比
@@ -56,6 +73,36 @@ struct tm timeNow;
 const uint8_t *Animate_value;
 uint32_t Animate_size;
 Adafruit_AHTX0 aht;
+std::map<u32_t, OneButton *> buttons;
+Audio audio;
+int curVolume = 8;
+
+extern void onButtonClick(void *p);
+extern void onButtonDoubleClick(void *p);
+
+void inline startTextAudio(const char *txt) {
+  sprintf(buf, TTS_LINK, txt, "xmamif");
+  audio.connecttohost(buf);
+}
+
+void inline tellCurTime() {
+  sprintf(buf, "现在是北京时间%02d:%02d", timeNow.tm_hour, timeNow.tm_min);
+}
+
+void inline initAudioDevice() {
+  audio.setPinout(PIN_I2S_BCLK, PIN_I2S_LRC, PIN_I2S_DOUT);
+  audio.setVolume(curVolume);
+}
+
+void inline setupButtons() {
+  u32_t btnPins[] = {PIN_KEY_ADD, PIN_KEY_MINUS, PIN_KEY_MODE};
+  for (auto pin : btnPins) {
+    auto *btn = new OneButton(pin);
+    btn->attachClick(onButtonClick, (void *)pin);
+    btn->attachDoubleClick(onButtonDoubleClick, (void *)pin);
+    buttons.insert({pin, btn});
+  }
+}
 
 void inline initAHT20Wire() {
   Wire.setPins(PIN_I2C_SDA, PIN_I2C_SCL);

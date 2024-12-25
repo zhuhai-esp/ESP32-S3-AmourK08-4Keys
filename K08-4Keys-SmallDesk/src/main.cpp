@@ -2,6 +2,33 @@
 
 uint64_t ms100ms = 0, ms300ms = 0, ms2s = 0, ms10min = 0;
 
+void onButtonClick(void *p) {
+  u32_t pin = (u32_t)p;
+  switch (pin) {
+  case PIN_KEY_MODE:
+    tellCurTime();
+    break;
+  case PIN_KEY_ADD:
+    break;
+  case PIN_KEY_MINUS:
+    break;
+  default:
+    break;
+  }
+}
+
+void onButtonDoubleClick(void *p) {
+  u32_t pin = (u32_t)p;
+  switch (pin) {
+  case PIN_KEY_ADD:
+    break;
+  case PIN_KEY_MINUS:
+    break;
+  default:
+    break;
+  }
+}
+
 void run10minTask() { getCityWeater(); }
 
 void run2sTask() {
@@ -29,9 +56,12 @@ void setup() {
   loadInitWeather();
   initAHT20Wire();
   showTimeDate(1);
+  setupButtons();
+  initAudioDevice();
 }
 
 void loop() {
+  audio.loop();
   auto cur = millis();
   if (cur - ms100ms > 100) {
     ms100ms = cur;
