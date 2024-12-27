@@ -20,6 +20,8 @@ void onButtonClick(void *p) {
 void onButtonDoubleClick(void *p) {
   u32_t pin = (u32_t)p;
   switch (pin) {
+  case PIN_KEY_MODE:
+    break;
   case PIN_KEY_ADD:
     break;
   case PIN_KEY_MINUS:
@@ -49,6 +51,7 @@ void setup() {
   Serial.begin(115200);
   initDisplay();
   initPixels();
+  initAudioDevice();
   autoConfigWifi();
   startConfigTime();
   initTJpeg();
@@ -57,12 +60,14 @@ void setup() {
   initAHT20Wire();
   showTimeDate(1);
   setupButtons();
-  initAudioDevice();
 }
 
 void loop() {
   audio.loop();
   auto cur = millis();
+  for (auto it : buttons) {
+    it.second->tick();
+  }
   if (cur - ms100ms > 100) {
     ms100ms = cur;
     run100msTask();

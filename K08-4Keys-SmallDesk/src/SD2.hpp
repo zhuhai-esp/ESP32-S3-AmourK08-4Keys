@@ -39,10 +39,6 @@
   "AppleWebKit/604.1.38 (KHTML, like Gecko) Version/11.0 Mobile/15A372 "       \
   "Safari/604.1"
 
-#define TTS_LINK                                                               \
-  "https://dds.dui.ai/runtime/v1/"                                             \
-  "synthesize?text=%s&voiceId=%s&speed=1&volume=80&audioType=mp3"
-
 #define FONT_COLOR_HOUR 0x6D9D
 #define FONT_COLOR_MIN 0x7FC0
 #define FONT_COLOR_SEC 0xEC1D
@@ -75,18 +71,20 @@ uint32_t Animate_size;
 Adafruit_AHTX0 aht;
 std::map<u32_t, OneButton *> buttons;
 Audio audio;
-int curVolume = 8;
+int curVolume = 10;
 
 extern void onButtonClick(void *p);
 extern void onButtonDoubleClick(void *p);
 
-void inline startTextAudio(const char *txt) {
-  sprintf(buf, TTS_LINK, txt, "xmamif");
-  audio.connecttohost(buf);
-}
-
 void inline tellCurTime() {
-  sprintf(buf, "现在是北京时间%02d:%02d", timeNow.tm_hour, timeNow.tm_min);
+  digitalWrite(PIN_RED_LED, HIGH);
+  sprintf(
+      buf,
+      "http://dds.dui.ai/runtime/v1/"
+      "synthesize?voiceId=xmamif&speed=1&volume=100&audioType=mp3&_=%u&text="
+      "你好，现在是北京时间%02d:%02d",
+      millis(), timeNow.tm_hour, timeNow.tm_min);
+  audio.connecttohost(buf);
 }
 
 void inline initAudioDevice() {
@@ -349,6 +347,7 @@ void inline startConfigTime() {
 }
 
 void inline initPixels() {
+  pinMode(PIN_RED_LED, OUTPUT);
   pixels.begin();
   pixels.setBrightness(80);
   pixels.clear();
@@ -471,5 +470,7 @@ inline void animationOneFrame() {
   imgAnim(&Animate_value, &Animate_size);
   TJpgDec.drawJpg(160, 160, Animate_value, Animate_size);
 }
+
+void audio_eof_stream(const char *info) { digitalWrite(PIN_RED_LED, LOW); }
 
 #endif
