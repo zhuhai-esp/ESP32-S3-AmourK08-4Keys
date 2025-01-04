@@ -1,3 +1,6 @@
+#include <Adafruit_NeoPixel.h>
+#include <Arduino.h>
+#include <Arduino_GFX_Library.h>
 #include <FFat.h>
 #include <SD.h>
 #include <SD_MMC.h>
@@ -5,9 +8,11 @@
 #include <esp_task_wdt.h>
 #include <esp_wifi.h>
 
-#include <Arduino_GFX_Library.h>
-
 #include "hw_config.h"
+#include <blectrl.h>
+
+#define PIN_LED 48
+#define PIN_RED_LED 47
 
 extern "C" {
 #include <nofrendo.h>
@@ -15,20 +20,25 @@ extern "C" {
 
 int16_t bg_color;
 extern Arduino_TFT *gfx;
+Adafruit_NeoPixel pixels(4, PIN_LED, NEO_GRB + NEO_KHZ800);
 extern void display_begin();
 
-void setup() {
-  Serial.begin(115200);
-  esp_wifi_deinit();
-  TaskHandle_t idle_0 = xTaskGetIdleTaskHandleForCPU(0);
-  esp_task_wdt_delete(idle_0);
-  display_begin();
+void inline initPixels() {
+  pinMode(PIN_RED_LED, OUTPUT);
+  digitalWrite(PIN_RED_LED, LOW);
+  pixels.begin();
+  pixels.setBrightness(40);
+  pixels.clear();
+  pixels.show();
+}
+
+void inline loadNesGame() {
   FILESYSTEM_BEGIN
-  File root = filesystem.open("/");
+  delay(500);
+  auto root = filesystem.open("/");
   char *argv[1];
   if (!root) {
-    Serial.println("Filesystem mount failed! Please check hw_config.h.");
-    gfx->println("Filesystem mount failed! Please check hw_config.h.");
+    gfx->println("File system error!");
   } else {
     bool foundRom = false;
     File file = root.openNextFile();
@@ -48,15 +58,25 @@ void setup() {
       }
       file = root.openNextFile();
     }
-    if (!foundRom) {
-      Serial.println("Failed to find rom file, please copy rom file to data "
-                     "folder and upload with \"ESP32 Sketch Data Upload\"");
-      argv[0] = "/";
+    if (foundRom) {
+      nofrendo_main(1, argv);
+    } else {
+      gfx->println("No nes found!");
     }
-    Serial.println("NoFrendo start!\n");
-    nofrendo_main(1, argv);
-    Serial.println("NoFrendo end!\n");
   }
+}
+
+void setup() {
+  Serial.begin(115200);
+  esp_wifi_deinit();
+  TaskHandle_t idle_0 = xTaskGetIdleTaskHandleForCPU(0);
+  esp_task_wdt_delete(idle_0);
+  initPixels();
+  display_begin();
+  gfx->println("Wait for BLE Gamepad...");
+  scanAndConnectServer();
+  gfx->println("Loading ROM...");
+  loadNesGame();
 }
 
 void loop() {}
