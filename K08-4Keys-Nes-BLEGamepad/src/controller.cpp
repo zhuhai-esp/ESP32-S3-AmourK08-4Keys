@@ -25,7 +25,7 @@ extern "C" void controller_init()
 }
 
 // up E9, down EA, left B6, right B5, A CD, B 224, X 223, Y E2
-extern uint16_t blueKey;
+extern uint32_t blueKey;
 
 extern "C" uint32_t controller_read_input()
 {
@@ -115,18 +115,32 @@ extern "C" uint32_t controller_read_input()
 
 #endif /* !defined(ARDUINO_ODROID_ESP32) */
 #else  /* !defined(HW_CONTROLLER_GPIO_ANALOG_JOYSTICK) */
-  u = digitalRead(HW_CONTROLLER_GPIO_UP) || blueKey==0xEA;
-  d = digitalRead(HW_CONTROLLER_GPIO_DOWN) || blueKey==0xE9;
-  l = digitalRead(HW_CONTROLLER_GPIO_LEFT) || blueKey==0xB5;
-  r = digitalRead(HW_CONTROLLER_GPIO_RIGHT) || blueKey==0xB6;
+  uint32_t keyl = blueKey & 0xFF;
+  u = digitalRead(HW_CONTROLLER_GPIO_UP);
+  if(keyl==3||keyl==4||keyl==5) u = 1;
+  r = digitalRead(HW_CONTROLLER_GPIO_RIGHT);
+  if(keyl==5||keyl==6||keyl==7) r = 1;
+  d = digitalRead(HW_CONTROLLER_GPIO_DOWN);
+  if(keyl==7||keyl==0||keyl==1) d = 1;
+  l = digitalRead(HW_CONTROLLER_GPIO_LEFT);
+  if(keyl==1||keyl==2||keyl==3) l = 1;
 #endif /* !defined(HW_CONTROLLER_GPIO_ANALOG_JOYSTICK) */
 
+  keyl = blueKey >> 8;
+  a = digitalRead(HW_CONTROLLER_GPIO_A);
+  if(keyl & 0x01) a = 1;
+  b = digitalRead(HW_CONTROLLER_GPIO_B);
+  if(keyl & 0x02) b = 1;
+  x = digitalRead(HW_CONTROLLER_GPIO_X);
+  if(keyl & 0x08) x = 1;
+  y = digitalRead(HW_CONTROLLER_GPIO_Y);
+  if(keyl & 0x10) y = 1;
+
+  keyl = blueKey >> 16;
   s = digitalRead(HW_CONTROLLER_GPIO_SELECT);
+  if(keyl & 0x4) s = HIGH;
   t = digitalRead(HW_CONTROLLER_GPIO_START);
-  a = digitalRead(HW_CONTROLLER_GPIO_A) || blueKey==0xCD;
-  b = digitalRead(HW_CONTROLLER_GPIO_B) || blueKey==0x224;
-  x = digitalRead(HW_CONTROLLER_GPIO_X) || blueKey==0x223;
-  y = digitalRead(HW_CONTROLLER_GPIO_Y) || blueKey==0xE2;
+  if(keyl & 0x8) t = HIGH;
 
   return 0xFFFFFFFF ^ ((!u << 0) | (!d << 1) | (!l << 2) | (!r << 3) | (!s << 4) | (!t << 5) | (!a << 6) | (!b << 7) | (!x << 8) | (!y << 9));
 }
