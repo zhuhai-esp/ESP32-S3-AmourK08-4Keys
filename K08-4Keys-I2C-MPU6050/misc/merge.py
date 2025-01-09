@@ -9,14 +9,11 @@ def copy_merge_bins(source, target, env):
     firmware_src = str(target[0])
     flash_images = env.Flatten(env.get("FLASH_EXTRA_IMAGES", [])) + ["$ESP32_APP_OFFSET", APP_BIN]
     name = firmware_src.split(os.path.sep)[2]
-    flash_size = env.GetProjectOption("board_upload.flash_size")
+    flash_size = '16MB'
     board = env.BoardConfig()
-    f_flash = board.get("build.f_flash", "40000000L")
-    flash_freq = '40m'
-    if (f_flash == '80000000L'):
-        flash_freq = '80m'
-    mcu = board.get("build.mcu", "esp32")
-    firmware_dst = "{}mpu6550-{}_{}_{}_0x0.bin".format(OUTPUT_DIR, mcu, name, flash_size)
+    flash_freq = '80m'
+    mcu = board.get("build.mcu", "esp32s3")
+    firmware_dst = "{}MPU6050-{}_{}_{}_0x0.bin".format(OUTPUT_DIR, mcu, name, flash_size)
     if os.path.isfile(firmware_dst):
         os.remove(firmware_dst)
     cmd = " ".join(

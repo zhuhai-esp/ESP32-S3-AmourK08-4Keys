@@ -13,7 +13,7 @@ def copy_merge_bins(source, target, env):
     board = env.BoardConfig()
     flash_freq = '80m'
     mcu = board.get("build.mcu", "esp32s3")
-    firmware_dst = "{}NetRadio-{}_{}_{}_0x0.bin".format(OUTPUT_DIR, mcu, name, flash_size)
+    firmware_dst = "{}SmallDesk-{}_{}_{}_0x0.bin".format(OUTPUT_DIR, mcu, name, flash_size)
     if os.path.isfile(firmware_dst):
         os.remove(firmware_dst)
     cmd = " ".join(
