@@ -73,7 +73,9 @@ void setup() {
   esp_task_wdt_delete(idle_0);
   initPixels();
   display_begin();
-  gfx->println("Wait for BLE Gamepad...");
+  gfx->setTextSize(2);
+  gfx->setTextColor(ORANGE);
+  gfx->println("Wait for Gamepad...");
   scanAndConnectServer();
   gfx->println("Loading ROM...");
   loadNesGame();
