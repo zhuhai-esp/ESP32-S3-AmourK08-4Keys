@@ -1,11 +1,11 @@
-x#include <ArduinoWebsockets.h>
+#include <ArduinoWebsockets.h>
 #include <TFT_eSPI.h>
 #include <WiFi.h>
 #include <driver/i2s.h>
 
-#define I2S_WS_RX 27
-#define I2S_SCK_RX 14
-#define I2S_SD_RX 12
+#define I2S_WS_RX 41
+#define I2S_SCK_RX 39
+#define I2S_SD_RX 40
 
 #define I2S_PORT I2S_NUM_1
 #define I2S_SAMPLE_RATE (16000)
