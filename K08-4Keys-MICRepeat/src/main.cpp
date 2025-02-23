@@ -1,3 +1,4 @@
+#include <Adafruit_NeoPixel.h>
 #include <TFT_eSPI.h>
 #include <driver/i2s.h>
 #include <esp_system.h>
@@ -14,6 +15,9 @@ TFT_eSPI tft = TFT_eSPI();
 #define I2S_DOUT_SPK 5
 #define I2S_SD_SPK 4
 
+#define PIN_LED 48
+#define PIN_RED_LED 47
+
 // 定义音频参数
 #define SAMPLE_RATE 16000
 #define BUFFER_SIZE (1024 * 1024 * 2) // 缓冲区总大小，单位为字节
@@ -26,18 +30,29 @@ TFT_eSPI tft = TFT_eSPI();
 void *audioBuffer;
 void *processedBuffer;
 char buf[256] = {0};
+Adafruit_NeoPixel pixels(4, PIN_LED, NEO_GRB + NEO_KHZ800);
 
 void displayInit() {
   tft.begin();
   tft.setRotation(3);
   tft.setTextColor(TFT_WHITE, TFT_BLACK);
   tft.fillScreen(TFT_BLACK);
-  tft.setFreeFont(&FreeMonoOblique9pt7b);
+  tft.setFreeFont(&FreeMonoBold24pt7b);
+}
+
+void inline initPixels() {
+  pinMode(PIN_RED_LED, OUTPUT);
+  digitalWrite(PIN_RED_LED, LOW);
+  pixels.begin();
+  pixels.setBrightness(40);
+  pixels.clear();
+  pixels.show();
 }
 
 void setup() {
   Serial.begin(115200);
   displayInit();
+  initPixels();
   audioBuffer = ps_malloc(BUFFER_SIZE);
   processedBuffer = ps_malloc(BUFFER_SIZE);
 
@@ -83,8 +98,6 @@ bool isVoiceActive(int16_t *data, size_t sampleCount, int threshold) {
   for (size_t i = 0; i < sampleCount; i++) {
     energy += abs(data[i]);
   }
-  sprintf(buf, "[%u] [%d]", energy, threshold * sampleCount);
-  tft.drawString(buf, 0, 20, 1);
   return energy > threshold * sampleCount;
 }
 
@@ -119,7 +132,11 @@ void loop() {
   uint32_t validFrameCount = 0;
   uint32_t lastVoiceTime = 0;
 
-  tft.drawString("Recording...", 0, 0, 1);
+  tft.fillScreen(TFT_BLACK);
+  tft.setTextColor(TFT_GREEN);
+  tft.drawString("REC...", 0, 0, 1);
+  pixels.fill(0x00FF00);
+  pixels.show();
   while (recording) {
     size_t bytesRead;
     i2s_read(I2S_NUM_0, audioBuffer + totalBytesRead,
@@ -152,7 +169,11 @@ void loop() {
   pitchShift((int16_t *)audioBuffer, (int16_t *)processedBuffer,
              totalBytesRead / sizeof(int16_t), PITCH_FACTOR);
 
-  tft.drawString("Playing...", 0, 0, 1);
+  tft.fillScreen(TFT_BLACK);
+  tft.setTextColor(TFT_PINK);
+  tft.drawString("PLAY...", 0, 0, 1);
+  pixels.fill(0xFF0000);
+  pixels.show();
   size_t bytesWritten;
   digitalWrite(I2S_SD_SPK, HIGH);
   i2s_write(I2S_NUM_1, processedBuffer, processedSampleCount * sizeof(int16_t),
