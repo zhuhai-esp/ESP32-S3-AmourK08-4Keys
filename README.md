@@ -9,7 +9,7 @@ AmourK08 Speaker With 4 keys and TF card powered by ESP32-S3
 
 2. 电路详情
 * 硬件(并不是最新)：[ESP32-S3-AmourK08-4Keys硬件开源地址](https://oshwhub.com/hzy3774/esp32s3-gai-zhuang-armourk08-lan-ya-yin-xiang-tf-ka-4-jian-ban)
-* 最新硬件请参考电路图和PCB：[ESP32-S3-AmourK08-4Keys GitHub](https://oshwhub.com/hzy3774/esp32s3-amourk08-4keys)
+* 最新硬件请参考电路图和PCB：[ESP32-S3-AmourK08-4Keys GitHub](https://github.com/zhuhai-esp/ESP32-S3-AmourK08-4Keys/releases/)
 * 或者 [ESP32-S3-AmourK08-4Keys Gitee](https://gitee.com/zhuhai-esp/ESP32-S3-AmourK08-4Keys/releases)
 
 3. 配件详情：
