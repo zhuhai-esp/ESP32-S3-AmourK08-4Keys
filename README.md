@@ -23,7 +23,7 @@ AmourK08 Speaker With 4 keys and TF card powered by ESP32-S3
 * 屏幕：ST7789 1.3寸IPS
 
 4. 交流反馈
-* QQ交流群1：588562265
+* QQ交流群1：1034289371
 
 # 小智相关
 1. 程序编译
@@ -71,14 +71,7 @@ AmourK08 Speaker With 4 keys and TF card powered by ESP32-S3
 #define DISPLAY_BACKLIGHT_OUTPUT_INVERT false
 ```
 
-3. 发布固件
-执行代码目录下 release.py 即可生成全量固件
-```shell
-python ./scripts/release.py
-```
-
-4. 固件烧录
+3. 固件烧录
 可以参考小智官方文档，使用在线烧录方式比较方便：
 * 在线烧录网址：https://espressif.github.io/esp-launchpad/
 
-5. 小智固件下载地址
